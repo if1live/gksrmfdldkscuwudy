@@ -1,13 +1,18 @@
 // initialize clipboard.js
 new Clipboard('.btn-clipboard');
 
-function loadTable(tableName) {
+function loadTable(tableName, cb) {
     if (typeTable.hasOwnProperty(tableName)) {
         return;
     }
     typeTable[tableName] = null;
     $.getJSON("./data/" + tableName + ".json", function(data) {
         typeTable[tableName] = prepareTable(data);
+        if (_.includes(typeTable, null)) {
+            return;
+        } else if (cb) {
+            cb();
+        }
     }).fail(function(err) { JSON.parse(err.responseText); console.log(err); });
 }
 
@@ -55,10 +60,12 @@ var typeTable = {};
 
 $("#input-type,#output-type").change(function(event) {
     var tableName = $(event.target).val();
-    loadTable(tableName);
+    loadTable(tableName, function() {
+        updateResult.bind($('#src-text'))();
+    });
 });
 
-$('#src-text').on('change keyup paste', function() {
+function updateResult() {
   var text = $(this).val();
   if(!text) { return; }
   var inTable = typeTable[$("#input-type").val()];
@@ -83,7 +90,9 @@ $('#src-text').on('change keyup paste', function() {
 
   var output = outputLines.join('\n');
   $('#dst-text').val(output);
-});
+}
+
+$('#src-text').on('change keyup paste', updateResult);
 
 // init list
 $.getJSON("./data/list.json", function(data) {

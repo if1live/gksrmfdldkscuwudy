@@ -1,83 +1,96 @@
 // initialize clipboard.js
 new Clipboard('.btn-clipboard');
 
-// alphabet -> hangul table
-var ALPHABET_TABLE = {
-  a: 'ㅁ',
-  b: 'ㅠ',
-  c: 'ㅊ',
-  d: 'ㅇ',
-  e: 'ㄷ',
-  f: 'ㄹ',
-  g: 'ㅎ',
-  h: 'ㅗ',
-  i: 'ㅑ',
-  j: 'ㅓ',
-  k: 'ㅏ',
-  l: 'ㅣ',
-  m: 'ㅡ',
-  n: 'ㅜ',
-  o: 'ㅐ',
-  p: 'ㅔ',
-  q: 'ㅂ',
-  r: 'ㄱ',
-  s: 'ㄴ',
-  t: 'ㅅ',
-  u: 'ㅕ',
-  v: 'ㅍ',
-  w: 'ㅈ',
-  x: 'ㅌ',
-  y: 'ㅛ',
-  z: 'ㅋ',
-};
-
-var SHIFT_TABLE = {
-  Q: 'ㅃ',
-  W: 'ㅉ',
-  E: 'ㄸ',
-  R: 'ㄲ',
-  T: 'ㅆ',
-  O: 'ㅒ',
-  P: 'ㅖ',
-};
-
-function convertAlphabetToHangulCharacter(ch) {
-  // a~z
-  if(ch >= 'a' && ch <= 'z') {
-    var idx = ch.toLowerCase();
-    return ALPHABET_TABLE[idx];
-  }
-
-  // A~Z
-  if(ch >= 'A' && ch <= 'Z') {
-    var candidate = SHIFT_TABLE[ch];
-    if(candidate) {
-      return candidate;
+function loadTable(tableName) {
+    if (typeTable.hasOwnProperty(tableName)) {
+        return;
     }
-    var idx = ch.toLowerCase();
-    return  ALPHABET_TABLE[idx];
-  }
-
-  return ch;
+    typeTable[tableName] = null;
+    $.getJSON("./data/" + tableName + ".json", function(data) {
+        typeTable[tableName] = prepareTable(data);
+    }).fail(function(err) { JSON.parse(err.responseText); console.log(err); });
 }
 
-function convertAlphabetToHangleArray(arr) {
-  var line = arr.map(convertAlphabetToHangulCharacter);
-  return line;
+function prepareTable(table) {
+    var specialKeys = _.keys(table).filter(function(k) { return k.startsWith("$") && k.length > 1; });
+    var specials = _.zipObject(specialKeys, _.map(specialKeys, function(k) {
+        var val = table[k];
+        if (k.startsWith("$")) {
+            return eval(val);
+        } else {
+            return val;
+        }
+    }));
+    return _.assign({
+        from: _.zipObject(_.values(table), _.keys(table)),
+        to: table
+    }, specials);
 }
+
+function decodeCharacter(ch, table) {
+    if (table.from.hasOwnProperty(ch)) {
+        return table.from[ch];
+    } else {
+        return ch;
+    }
+}
+
+function encodeCharacter(ch, table) {
+    if (table.to.hasOwnProperty(ch)) {
+        return table.to[ch];
+    } else {
+        return ch;
+    }
+}
+
+function decodeString(str, table) {
+    return _.map(str, function(ch) { return decodeCharacter(ch, table); });
+}
+
+function encodeString(str, table) {
+    return _.map(str, function(ch) { return encodeCharacter(ch, table); });
+}
+
+var typeTable = {};
+
+$("#input-type,#output-type").change(function(event) {
+    var tableName = $(event.target).val();
+    loadTable(tableName);
+});
 
 $('#src-text').on('change keyup paste', function() {
   var text = $(this).val();
   if(!text) { return; }
+  var inTable = typeTable[$("#input-type").val()];
+  var outTable = typeTable[$("#output-type").val()];
 
   var inputLines = text.match(/[^\r\n]+/g);
 
   var outputLines = inputLines.map(function(line) {
-    var arr = line.split("");
-    var converted = convertAlphabetToHangleArray(arr);
-    return Hangul.assemble(converted);
+    var arr;
+    if (inTable.hasOwnProperty("$in")) {
+      arr = inTable["$in"](line);
+    } else {
+      arr = line.split("");
+    }
+    var decoded = decodeString(arr, inTable);
+    var encoded = encodeString(decoded, outTable);
+    if (outTable.hasOwnProperty("$out")) {
+      return outTable["$out"](encoded);
+    }
+    return encoded.join("");
   });
 
   var output = outputLines.join('\n');
   $('#dst-text').val(output);
+});
+
+// init list
+$.getJSON("./data/list.json", function(data) {
+    var types = $("#input-type,#output-type");
+    types.empty();
+    _.forEach(data, function(name, type) { types.append("<option value=" + type + ">" + name + "</option>") });
+    $("#input-type").val("qwerty");
+    $("#output-type").val("2bulsik");
+    _.map(["qwerty", "2bulsik"], loadTable);
 });

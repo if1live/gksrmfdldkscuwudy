@@ -12,6 +12,7 @@
 
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
     <link href="./style.css" rel="stylesheet">
+
   </head>
   <body>
 
@@ -28,13 +29,13 @@
       </p>
 
       <div class="form-group">
-        <label for="src-text">gksrmfdldkscuwudy (한글이안쳐져요)</label>
+        <label for="src-text">gksrmfdldkscuwudy (한글이안쳐져요)<select id="input-type"></select></label>
         <textarea id="src-text" class="form-control"
           rows="5" placeholder="gksrmfdldkscuwudy"></textarea>
       </div>
 
       <div class="form-group">
-        <label for="dst-text">변환 결과</label>
+        <label for="dst-text">변환 결과<select id="output-type"></select></label>
         <textarea id="dst-text" class="form-control"
           rows="5"></textarea>
       </div>
@@ -59,6 +60,7 @@
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.16.2/lodash.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
 
     <script src="https://unpkg.com/hangul-js@0.2.2/hangul.min.js"> </script>
